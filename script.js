@@ -384,6 +384,82 @@ function initializeAccountMenu() {
     console.log('✅ قائمة الحساب - مفعلة');
 }
 
+// تبويبات الحساب
+function initializeAccountTabs() {
+    console.log('📑 جاري تهيئة تبويبات الحساب...');
+    
+    const tabLinks = document.querySelectorAll('.account-nav-link[data-tab]');
+    const tabContents = document.querySelectorAll('.account-tab-content');
+    
+    if (tabLinks.length === 0 || tabContents.length === 0) {
+        console.log('ℹ️ لا توجد تبويبات في هذه الصفحة');
+        return;
+    }
+    
+    function switchTab(tabId) {
+        // إخفاء جميع المحتويات
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // إزالة التنشيط من جميع الروابط
+        tabLinks.forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // إظهار المحتوى المطلوب
+        const targetContent = document.getElementById(tabId);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+        
+        // تنشيط الرابط المقابل
+        const targetLink = document.querySelector(`.account-nav-link[data-tab="${tabId}"]`);
+        if (targetLink) {
+            targetLink.classList.add('active');
+        }
+        
+        console.log(`✅ تم التبديل إلى تبويب: ${tabId}`);
+    }
+    
+    // معالجة النقر على الروابط
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tabId = this.getAttribute('data-tab');
+            switchTab(tabId);
+            
+            // تحديث الهاش في الرابط
+            const hash = this.getAttribute('href');
+            history.pushState(null, null, hash);
+        });
+    });
+    
+    // معالجة الهاش عند تحميل الصفحة
+    function handleHash() {
+        const hash = window.location.hash;
+        if (hash) {
+            const link = document.querySelector(`.account-nav-link[href="${hash}"]`);
+            if (link) {
+                const tabId = link.getAttribute('data-tab');
+                switchTab(tabId);
+            } else if (hash === '#orders') {
+                switchTab('orders-section');
+            } else if (hash === '#wishlist') {
+                switchTab('wishlist-section');
+            } else if (hash === '#details') {
+                switchTab('details-section');
+            } else if (hash === '#dashboard') {
+                switchTab('dashboard-section');
+            }
+        }
+    }
+    
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    
+    console.log('✅ تبويبات الحساب - مفعلة');
+}
 
 // تهيئة النظام عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
@@ -424,6 +500,14 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('❌ فشل تهيئة قائمة الحساب:', error);
     }
+
+    try {
+        initializeAccountTabs();
+        console.log('✅ تم تهيئة تبويبات الحساب بنجاح');
+    } catch (error) {
+        console.error('❌ فشل تهيئة تبويبات الحساب:', error);
+    }
+
 
     
     console.log('🎉 جميع المكونات جاهزة للعمل!');

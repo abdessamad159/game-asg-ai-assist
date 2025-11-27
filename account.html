@@ -73,19 +73,19 @@
                         <p>ahmed@example.com</p>
                     </div>
                     <nav class="account-nav">
-                        <a href="#" class="account-nav-link active">
+                        <a href="#dashboard" class="account-nav-link active" data-tab="dashboard-section">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>لوحة التحكم</span>
                         </a>
-                        <a href="#" class="account-nav-link">
+                        <a href="#orders" class="account-nav-link" data-tab="orders-section">
                             <i class="fas fa-shopping-bag"></i>
                             <span>طلباتي</span>
                         </a>
-                        <a href="#" class="account-nav-link">
+                        <a href="#wishlist" class="account-nav-link" data-tab="wishlist-section">
                             <i class="fas fa-heart"></i>
                             <span>المفضلة</span>
                         </a>
-                        <a href="#" class="account-nav-link">
+                        <a href="#details" class="account-nav-link" data-tab="details-section">
                             <i class="fas fa-user-cog"></i>
                             <span>تفاصيل الحساب</span>
                         </a>
@@ -98,45 +98,92 @@
 
                 <!-- المحتوى الرئيسي -->
                 <main class="account-content">
-                    <div class="dashboard-header">
-                        <h2>لوحة التحكم</h2>
-                        <p>مرحباً بك في حسابك الشخصي</p>
+                    <!-- قسم لوحة التحكم -->
+                    <div id="dashboard-section" class="account-tab-content active">
+                        <div class="dashboard-header">
+                            <h2>لوحة التحكم</h2>
+                            <p>مرحباً بك في حسابك الشخصي</p>
+                        </div>
+
+                        <!-- إحصائيات سريعة -->
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <div class="stat-icon orders">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>5</h3>
+                                    <p>الطلبات</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon wishlist">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>12</h3>
+                                    <p>المفضلة</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon wallet">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3>0 ريال</h3>
+                                    <p>الرصيد</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- آخر الطلبات -->
+                        <div class="recent-orders-section">
+                            <h3>آخر الطلبات</h3>
+                            <div class="table-responsive">
+                                <table class="orders-table">
+                                    <thead>
+                                        <tr>
+                                            <th>رقم الطلب</th>
+                                            <th>التاريخ</th>
+                                            <th>الحالة</th>
+                                            <th>الإجمالي</th>
+                                            <th>الإجراء</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>#ORD-2563</td>
+                                            <td>27 نوفمبر 2024</td>
+                                            <td><span class="status completed">مكتمل</span></td>
+                                            <td>12,999 ريال</td>
+                                            <td><a href="#" class="btn-sm">عرض</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#ORD-2562</td>
+                                            <td>15 نوفمبر 2024</td>
+                                            <td><span class="status processing">قيد المعالجة</span></td>
+                                            <td>5,999 ريال</td>
+                                            <td><a href="#" class="btn-sm">عرض</a></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#ORD-2561</td>
+                                            <td>01 نوفمبر 2024</td>
+                                            <td><span class="status cancelled">ملغي</span></td>
+                                            <td>8,499 ريال</td>
+                                            <td><a href="#" class="btn-sm">عرض</a></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- إحصائيات سريعة -->
-                    <div class="dashboard-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon orders">
-                                <i class="fas fa-shopping-bag"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h3>5</h3>
-                                <p>الطلبات</p>
-                            </div>
+                    <!-- قسم الطلبات -->
+                    <div id="orders-section" class="account-tab-content">
+                        <div class="dashboard-header">
+                            <h2>طلباتي</h2>
+                            <p>سجل جميع طلباتك السابقة والحالية</p>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon wishlist">
-                                <i class="fas fa-heart"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h3>12</h3>
-                                <p>المفضلة</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon wallet">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h3>0 ريال</h3>
-                                <p>الرصيد</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- آخر الطلبات -->
-                    <div class="recent-orders-section">
-                        <h3>آخر الطلبات</h3>
                         <div class="table-responsive">
                             <table class="orders-table">
                                 <thead>
@@ -170,9 +217,103 @@
                                         <td>8,499 ريال</td>
                                         <td><a href="#" class="btn-sm">عرض</a></td>
                                     </tr>
+                                    <tr>
+                                        <td>#ORD-2560</td>
+                                        <td>20 أكتوبر 2024</td>
+                                        <td><span class="status completed">مكتمل</span></td>
+                                        <td>4,500 ريال</td>
+                                        <td><a href="#" class="btn-sm">عرض</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>#ORD-2559</td>
+                                        <td>10 أكتوبر 2024</td>
+                                        <td><span class="status completed">مكتمل</span></td>
+                                        <td>1,200 ريال</td>
+                                        <td><a href="#" class="btn-sm">عرض</a></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <!-- قسم المفضلة -->
+                    <div id="wishlist-section" class="account-tab-content">
+                        <div class="dashboard-header">
+                            <h2>المفضلة</h2>
+                            <p>المنتجات التي قمت بحفظها للشراء لاحقاً</p>
+                        </div>
+                        <div class="products-grid wishlist-grid">
+                            <div class="product-card">
+                                <div class="product-badge">الأكثر مبيعاً</div>
+                                <button class="remove-wishlist" title="إزالة من المفضلة"><i class="fas fa-times"></i></button>
+                                <h3>Titan Xtreme</h3>
+                                <div class="product-specs">
+                                    <span><i class="fas fa-microchip"></i> Intel i9-13900K</span>
+                                    <span><i class="fas fa-desktop"></i> RTX 4090</span>
+                                </div>
+                                <div class="product-price">
+                                    <span class="price">12,999 ريال</span>
+                                </div>
+                                <button class="btn btn-primary btn-sm" style="width: 100%;">إضافة للسلة</button>
+                            </div>
+                            <div class="product-card">
+                                <button class="remove-wishlist" title="إزالة من المفضلة"><i class="fas fa-times"></i></button>
+                                <h3>Pro Gamer</h3>
+                                <div class="product-specs">
+                                    <span><i class="fas fa-microchip"></i> AMD Ryzen 7</span>
+                                    <span><i class="fas fa-desktop"></i> RTX 4070 Ti</span>
+                                </div>
+                                <div class="product-price">
+                                    <span class="price">8,499 ريال</span>
+                                </div>
+                                <button class="btn btn-primary btn-sm" style="width: 100%;">إضافة للسلة</button>
+                            </div>
+                            <div class="product-card">
+                                <button class="remove-wishlist" title="إزالة من المفضلة"><i class="fas fa-times"></i></button>
+                                <h3>Starter Pack</h3>
+                                <div class="product-specs">
+                                    <span><i class="fas fa-microchip"></i> Intel i5-13600K</span>
+                                    <span><i class="fas fa-desktop"></i> RTX 4060</span>
+                                </div>
+                                <div class="product-price">
+                                    <span class="price">5,999 ريال</span>
+                                </div>
+                                <button class="btn btn-primary btn-sm" style="width: 100%;">إضافة للسلة</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- قسم تفاصيل الحساب -->
+                    <div id="details-section" class="account-tab-content">
+                        <div class="dashboard-header">
+                            <h2>تفاصيل الحساب</h2>
+                            <p>تعديل معلوماتك الشخصية وكلمة المرور</p>
+                        </div>
+                        <form class="auth-form" style="max-width: 100%;">
+                            <div class="form-group">
+                                <label>الاسم الكامل</label>
+                                <input type="text" class="form-control" value="أحمد محمد">
+                            </div>
+                            <div class="form-group">
+                                <label>البريد الإلكتروني</label>
+                                <input type="email" class="form-control" value="ahmed@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>رقم الهاتف</label>
+                                <input type="tel" class="form-control" value="0551234567">
+                            </div>
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+                            <h3 style="margin-bottom: 15px; font-size: 1.2rem;">تغيير كلمة المرور</h3>
+                            <div class="form-group">
+                                <label>كلمة المرور الحالية</label>
+                                <input type="password" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>كلمة المرور الجديدة</label>
+                                <input type="password" class="form-control">
+                            </div>
+                            <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                        </form>
                     </div>
                 </main>
             </div>

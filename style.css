@@ -1215,3 +1215,47 @@ footer {
         margin-bottom: 30px;
     }
 }
+
+/* تبويبات الحساب */
+.account-tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.account-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* شبكة المفضلة */
+.wishlist-grid {
+    margin-top: 20px;
+}
+
+.remove-wishlist {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff4444;
+    border: 1px solid rgba(255, 50, 50, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.remove-wishlist:hover {
+    background: #ff4444;
+    color: white;
+    transform: scale(1.1);
+}
