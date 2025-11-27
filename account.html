@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حسابي - GameASG</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="index.html" class="logo">GameASG</a>
+                <div class="nav-links">
+                    <a href="index.html">الرئيسية</a>
+                    <a href="index.html#features">المميزات</a>
+                    <a href="index.html#products">المنتجات</a>
+                    <a href="index.html#contact">اتصل بنا</a>
+                </div>
+                <div class="account-menu">
+                    <button class="account-btn active" id="accountBtn">
+                        <i class="fas fa-user"></i>
+                        <span>حسابي</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="account-dropdown" id="accountDropdown">
+                        <a href="login.html" class="dropdown-item">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>تسجيل الدخول</span>
+                        </a>
+                        <a href="signup.html" class="dropdown-item">
+                            <i class="fas fa-user-plus"></i>
+                            <span>إنشاء حساب جديد</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="account.html" class="dropdown-item active">
+                            <i class="fas fa-user-circle"></i>
+                            <span>حسابي</span>
+                        </a>
+                        <a href="account.html#orders" class="dropdown-item">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>طلباتي</span>
+                        </a>
+                        <a href="account.html#wishlist" class="dropdown-item">
+                            <i class="fas fa-heart"></i>
+                            <span>المفضلة</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>تسجيل الخروج</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- قسم الحساب -->
+    <section class="account-section">
+        <div class="container">
+            <div class="account-layout">
+                <!-- القائمة الجانبية -->
+                <aside class="account-sidebar">
+                    <div class="user-profile-summary">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3>أحمد محمد</h3>
+                        <p>ahmed@example.com</p>
+                    </div>
+                    <nav class="account-nav">
+                        <a href="#" class="account-nav-link active">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>لوحة التحكم</span>
+                        </a>
+                        <a href="#" class="account-nav-link">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>طلباتي</span>
+                        </a>
+                        <a href="#" class="account-nav-link">
+                            <i class="fas fa-heart"></i>
+                            <span>المفضلة</span>
+                        </a>
+                        <a href="#" class="account-nav-link">
+                            <i class="fas fa-user-cog"></i>
+                            <span>تفاصيل الحساب</span>
+                        </a>
+                        <a href="#" class="account-nav-link logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>تسجيل الخروج</span>
+                        </a>
+                    </nav>
+                </aside>
+
+                <!-- المحتوى الرئيسي -->
+                <main class="account-content">
+                    <div class="dashboard-header">
+                        <h2>لوحة التحكم</h2>
+                        <p>مرحباً بك في حسابك الشخصي</p>
+                    </div>
+
+                    <!-- إحصائيات سريعة -->
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon orders">
+                                <i class="fas fa-shopping-bag"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>5</h3>
+                                <p>الطلبات</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon wishlist">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>12</h3>
+                                <p>المفضلة</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon wallet">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>0 ريال</h3>
+                                <p>الرصيد</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- آخر الطلبات -->
+                    <div class="recent-orders-section">
+                        <h3>آخر الطلبات</h3>
+                        <div class="table-responsive">
+                            <table class="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>رقم الطلب</th>
+                                        <th>التاريخ</th>
+                                        <th>الحالة</th>
+                                        <th>الإجمالي</th>
+                                        <th>الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>#ORD-2563</td>
+                                        <td>27 نوفمبر 2024</td>
+                                        <td><span class="status completed">مكتمل</span></td>
+                                        <td>12,999 ريال</td>
+                                        <td><a href="#" class="btn-sm">عرض</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>#ORD-2562</td>
+                                        <td>15 نوفمبر 2024</td>
+                                        <td><span class="status processing">قيد المعالجة</span></td>
+                                        <td>5,999 ريال</td>
+                                        <td><a href="#" class="btn-sm">عرض</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>#ORD-2561</td>
+                                        <td>01 نوفمبر 2024</td>
+                                        <td><span class="status cancelled">ملغي</span></td>
+                                        <td>8,499 ريال</td>
+                                        <td><a href="#" class="btn-sm">عرض</a></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </section>
+
+    <!-- التذييل -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>GameASG</h4>
+                    <p>متخصصون في تجميعات أجهزة الألعاب الاحترافية بأفضل المكونات وأعلى الأداء.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <a href="index.html#features">المميزات</a>
+                    <a href="index.html#products">المنتجات</a>
+                    <a href="index.html#contact">اتصل بنا</a>
+                </div>
+                <div class="footer-section">
+                    <h4>التواصل</h4>
+                    <p><i class="fas fa-phone"></i> 0551234567</p>
+                    <p><i class="fas fa-envelope"></i> info@gameasg.com</p>
+                </div>
+            </div>
+            <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+            </div>
+            <p style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
+                &copy; 2024 GameASG. جميع الحقوق محفوظة.
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

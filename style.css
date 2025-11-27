@@ -965,3 +965,253 @@ footer {
         grid-template-columns: 1fr;
     }
 }
+
+/* صفحة الحساب */
+.account-section {
+    padding: 120px 0 80px;
+    min-height: 100vh;
+}
+
+.account-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+}
+
+/* القائمة الجانبية للحساب */
+.account-sidebar {
+    background: var(--card-bg);
+    border-radius: 15px;
+    border: 1px solid rgba(106, 17, 203, 0.3);
+    overflow: hidden;
+    height: fit-content;
+}
+
+.user-profile-summary {
+    padding: 30px 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.1), rgba(37, 117, 252, 0.1));
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 2rem;
+    color: white;
+    box-shadow: 0 0 20px rgba(106, 17, 203, 0.5);
+}
+
+.user-profile-summary h3 {
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+}
+
+.user-profile-summary p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.account-nav {
+    padding: 15px;
+}
+
+.account-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+}
+
+.account-nav-link:hover, .account-nav-link.active {
+    background: rgba(106, 17, 203, 0.1);
+    color: #6a11cb;
+}
+
+.account-nav-link i {
+    width: 20px;
+    text-align: center;
+}
+
+.account-nav-link.logout:hover {
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff4444;
+}
+
+/* محتوى الحساب */
+.account-content {
+    background: var(--card-bg);
+    border-radius: 15px;
+    border: 1px solid rgba(106, 17, 203, 0.3);
+    padding: 30px;
+}
+
+.dashboard-header {
+    margin-bottom: 30px;
+}
+
+.dashboard-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.dashboard-header p {
+    color: var(--text-secondary);
+}
+
+/* إحصائيات لوحة التحكم */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(106, 17, 203, 0.3);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-icon.orders {
+    background: rgba(37, 117, 252, 0.1);
+    color: #2575fc;
+}
+
+.stat-icon.wishlist {
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff4444;
+}
+
+.stat-icon.wallet {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.stat-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 2px;
+}
+
+.stat-info p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* جدول الطلبات */
+.recent-orders-section h3 {
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.orders-table th {
+    text-align: right;
+    padding: 15px;
+    background: rgba(106, 17, 203, 0.1);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.orders-table td {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+.orders-table tr:last-child td {
+    border-bottom: none;
+}
+
+.status {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status.completed {
+    background: rgba(0, 200, 83, 0.1);
+    color: #00c853;
+}
+
+.status.processing {
+    background: rgba(37, 117, 252, 0.1);
+    color: #2575fc;
+}
+
+.status.cancelled {
+    background: rgba(255, 50, 50, 0.1);
+    color: #ff4444;
+}
+
+.btn-sm {
+    padding: 5px 15px;
+    background: transparent;
+    border: 1px solid rgba(106, 17, 203, 0.5);
+    border-radius: 5px;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.btn-sm:hover {
+    background: #6a11cb;
+    border-color: #6a11cb;
+}
+
+@media (max-width: 992px) {
+    .account-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .account-sidebar {
+        margin-bottom: 30px;
+    }
+}
