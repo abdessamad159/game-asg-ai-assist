@@ -79,6 +79,93 @@ header {
     color: #6a11cb;
 }
 
+/* قائمة الحساب */
+.account-menu {
+    position: relative;
+}
+
+.account-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.2), rgba(37, 117, 252, 0.2));
+    border: 1px solid rgba(106, 17, 203, 0.5);
+    border-radius: 25px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.account-btn:hover {
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.4), rgba(37, 117, 252, 0.4));
+    box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
+    transform: translateY(-2px);
+}
+
+.account-btn i:last-child {
+    font-size: 0.75rem;
+    transition: transform 0.3s ease;
+}
+
+.account-btn.active i:last-child {
+    transform: rotate(180deg);
+}
+
+.account-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    min-width: 220px;
+    background: rgba(10, 10, 10, 0.98);
+    border: 1px solid rgba(106, 17, 203, 0.3);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(106, 17, 203, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.account-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.2), rgba(37, 117, 252, 0.2));
+    padding-right: 25px;
+}
+
+.dropdown-item i {
+    width: 18px;
+    font-size: 1rem;
+    color: #6a11cb;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(106, 17, 203, 0.3), transparent);
+    margin: 5px 0;
+}
+
+
 /* قسم البطل */
 .hero {
     height: 100vh;

@@ -340,6 +340,51 @@ function initializeSmoothScroll() {
     console.log('🔍 التمرير السلس - مفعل');
 }
 
+// قائمة الحساب
+function initializeAccountMenu() {
+    console.log('👤 جاري تهيئة قائمة الحساب...');
+    
+    const accountBtn = document.getElementById('accountBtn');
+    const accountDropdown = document.getElementById('accountDropdown');
+    
+    if (!accountBtn || !accountDropdown) {
+        console.error('❌ عناصر قائمة الحساب غير موجودة!');
+        return;
+    }
+    
+    // فتح/إغلاق القائمة عند النقر على الزر
+    accountBtn.addEventListener('click', function(event) {
+        event.stopPropagation();
+        const isActive = accountDropdown.classList.contains('active');
+        
+        if (isActive) {
+            accountDropdown.classList.remove('active');
+            accountBtn.classList.remove('active');
+        } else {
+            accountDropdown.classList.add('active');
+            accountBtn.classList.add('active');
+        }
+        
+        console.log('🔄 حالة القائمة:', isActive ? 'مغلقة' : 'مفتوحة');
+    });
+    
+    // إغلاق القائمة عند النقر خارجها
+    document.addEventListener('click', function(event) {
+        if (!accountBtn.contains(event.target) && !accountDropdown.contains(event.target)) {
+            accountDropdown.classList.remove('active');
+            accountBtn.classList.remove('active');
+        }
+    });
+    
+    // منع إغلاق القائمة عند النقر داخلها
+    accountDropdown.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+    
+    console.log('✅ قائمة الحساب - مفعلة');
+}
+
+
 // تهيئة النظام عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 الصفحة محملة بالكامل، بدء تهيئة المكونات...');
@@ -372,6 +417,14 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('❌ فشل تهيئة التمرير السلس:', error);
     }
+    
+    try {
+        initializeAccountMenu();
+        console.log('✅ تم تهيئة قائمة الحساب بنجاح');
+    } catch (error) {
+        console.error('❌ فشل تهيئة قائمة الحساب:', error);
+    }
+
     
     console.log('🎉 جميع المكونات جاهزة للعمل!');
     
