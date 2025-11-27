@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - GameASG</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="index.html" class="logo">GameASG</a>
+                <div class="nav-links">
+                    <a href="index.html#features">المميزات</a>
+                    <a href="index.html#products">المنتجات</a>
+                    <a href="index.html#contact">اتصل بنا</a>
+                </div>
+                <div class="account-menu">
+                    <button class="account-btn" id="accountBtn">
+                        <i class="fas fa-user"></i>
+                        <span>حسابي</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="account-dropdown" id="accountDropdown">
+                        <a href="login.html" class="dropdown-item active">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>تسجيل الدخول</span>
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user-plus"></i>
+                            <span>إنشاء حساب جديد</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user-circle"></i>
+                            <span>حسابي</span>
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span>طلباتي</span>
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-heart"></i>
+                            <span>المفضلة</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>تسجيل الخروج</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- قسم تسجيل الدخول -->
+    <section class="auth-section">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h2>مرحباً بعودتك</h2>
+                    <p>سجل دخولك للمتابعة إلى GameASG</p>
+                </div>
+                <form class="auth-form">
+                    <div class="form-group">
+                        <label for="email">البريد الإلكتروني</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="email" class="form-control" placeholder="name@example.com" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">كلمة المرور</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="password" class="form-control" placeholder="أدخل كلمة المرور" required>
+                            <button type="button" class="toggle-password"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-options">
+                        <label class="checkbox-container">
+                            <input type="checkbox">
+                            <span class="checkmark"></span>
+                            تذكرني
+                        </label>
+                        <a href="#" class="forgot-password">نسيت كلمة المرور؟</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">تسجيل الدخول</button>
+                    
+                    <div class="auth-divider">
+                        <span>أو</span>
+                    </div>
+                    
+                    <div class="social-login">
+                        <button type="button" class="social-btn google">
+                            <i class="fab fa-google"></i>
+                            <span>Google</span>
+                        </button>
+                        <button type="button" class="social-btn apple">
+                            <i class="fab fa-apple"></i>
+                            <span>Apple</span>
+                        </button>
+                    </div>
+                </form>
+                <div class="auth-footer">
+                    <p>ليس لديك حساب؟ <a href="#" class="link-primary">إنشاء حساب جديد</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- التذييل -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>GameASG</h4>
+                    <p>متخصصون في تجميعات أجهزة الألعاب الاحترافية بأفضل المكونات وأعلى الأداء.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <a href="index.html#features">المميزات</a>
+                    <a href="index.html#products">المنتجات</a>
+                    <a href="index.html#contact">اتصل بنا</a>
+                </div>
+                <div class="footer-section">
+                    <h4>التواصل</h4>
+                    <p><i class="fas fa-phone"></i> 0551234567</p>
+                    <p><i class="fas fa-envelope"></i> info@gameasg.com</p>
+                </div>
+            </div>
+            <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+            </div>
+            <p style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
+                &copy; 2024 GameASG. جميع الحقوق محفوظة.
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
