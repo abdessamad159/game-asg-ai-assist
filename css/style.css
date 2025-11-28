@@ -1271,3 +1271,9 @@ footer {
     color: white;
     transform: scale(1.1);
 }
+/* Wishlist Button */
+.product-card { position: relative; }
+.wishlist-btn { position: absolute; top: 15px; left: 15px; background: rgba(255, 255, 255, 0.1); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; z-index: 10; }
+.wishlist-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+.wishlist-btn.active { color: #ff4757; background: rgba(255, 71, 87, 0.1); }
+.wishlist-btn i { font-size: 1.1rem; }

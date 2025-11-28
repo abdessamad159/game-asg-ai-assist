@@ -409,12 +409,144 @@ function initializeAccountSystem() {
     }
 }
 
+// Wishlist System
+function initializeWishlist() {
+    console.log('❤️ Initializing Wishlist...');
+    
+    let wishlist = JSON.parse(localStorage.getItem('gameasg_wishlist')) || [];
+    
+    function saveWishlist() {
+        localStorage.setItem('gameasg_wishlist', JSON.stringify(wishlist));
+        updateWishlistUI();
+    }
+    
+    function toggleWishlist(product) {
+        const index = wishlist.findIndex(item => item.id === product.id);
+        
+        if (index === -1) {
+            wishlist.push(product);
+            showToast('تمت الإضافة للمفضلة ❤️');
+        } else {
+            wishlist.splice(index, 1);
+            showToast('تم الحذف من المفضلة 💔');
+        }
+        saveWishlist();
+    }
+    
+    function updateWishlistUI() {
+        // Update buttons on product cards
+        document.querySelectorAll('.product-card').forEach(card => {
+            const id = card.getAttribute('data-id');
+            const btn = card.querySelector('.wishlist-btn');
+            if (btn) {
+                const inWishlist = wishlist.some(item => item.id === id);
+                if (inWishlist) {
+                    btn.classList.add('active');
+                    btn.innerHTML = '<i class="fas fa-heart"></i>';
+                } else {
+                    btn.classList.remove('active');
+                    btn.innerHTML = '<i class="far fa-heart"></i>';
+                }
+            }
+        });
+        
+        // Update Account Page Wishlist
+        const wishlistGrid = document.querySelector('.wishlist-grid');
+        if (wishlistGrid) {
+            if (wishlist.length === 0) {
+                wishlistGrid.innerHTML = '<div class="empty-state"><p>لا توجد منتجات في المفضلة</p></div>';
+            } else {
+                wishlistGrid.innerHTML = wishlist.map(item => `
+                    <div class="product-card">
+                        <button class="remove-wishlist" onclick="removeFromWishlist('${item.id}')" title="إزالة"><i class="fas fa-times"></i></button>
+                        <h3>${item.name}</h3>
+                        <div class="product-specs">
+                            ${item.specs.split(', ').map(spec => `<span><i class="fas fa-check"></i> ${spec}</span>`).join('')}
+                        </div>
+                        <div class="product-price">
+                            <span class="price">${parseInt(item.price).toLocaleString()} ريال</span>
+                        </div>
+                        <button class="btn btn-primary btn-sm" style="width: 100%;">إضافة للسلة</button>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Update Dashboard Stats
+        const wishlistCount = document.querySelector('.stat-info h3'); // Assuming order is fixed, better to use ID
+        // Better selector for wishlist count in dashboard
+        const wishlistStat = document.querySelector('.stat-icon.wishlist')?.nextElementSibling?.querySelector('h3');
+        if (wishlistStat) {
+            wishlistStat.textContent = wishlist.length;
+        }
+    }
+    
+    // Global function for remove button in account page
+    window.removeFromWishlist = function(id) {
+        const index = wishlist.findIndex(item => item.id === id);
+        if (index !== -1) {
+            wishlist.splice(index, 1);
+            saveWishlist();
+            showToast('تم الحذف من المفضلة');
+        }
+    };
+    
+    // Add Click Listeners to Buttons
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const card = this.closest('.product-card');
+            const product = {
+                id: card.getAttribute('data-id'),
+                name: card.getAttribute('data-name'),
+                price: card.getAttribute('data-price'),
+                specs: card.getAttribute('data-specs')
+            };
+            
+            toggleWishlist(product);
+        });
+    });
+    
+    // Initial UI Update
+    updateWishlistUI();
+}
+
+// Toast Notification
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Style
+    Object.assign(toast.style, {
+        position: 'fixed',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'rgba(0,0,0,0.8)',
+        color: 'white',
+        padding: '10px 20px',
+        borderRadius: '20px',
+        zIndex: '9999',
+        animation: 'fadeInUp 0.3s ease'
+    });
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
+
 // التهيئة العامة
 document.addEventListener('DOMContentLoaded', function() {
     try { initializeAIAssistant(); } catch(e) { console.error('AI Error', e); }
     try { initializeCountdown(); } catch(e) { console.error('Timer Error', e); }
     try { initializeUIEffects(); } catch(e) { console.error('UI Error', e); }
     try { initializeAccountSystem(); } catch(e) { console.error('Account Error', e); }
+    try { initializeWishlist(); } catch(e) { console.error('Wishlist Error', e); }
     
     console.log('✅ GameASG System Ready');
 });
