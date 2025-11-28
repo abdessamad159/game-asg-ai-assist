@@ -11,7 +11,7 @@ class Game {
         this.resize();
         window.addEventListener('resize', () => this.resize());
         
-        this.roundState = 'STARTING'; // FIGHTING, ROUND_OVER
+        this.roundState = 'STARTING';
         this.roundTimer = 0;
 
         this.startRound();
@@ -30,28 +30,26 @@ class Game {
         this.projectiles = [];
         this.roundState = 'FIGHTING';
         
-        // Pick a scenario: 0 = Plane Win, 1 = Monster Win, 2 = Draw
         const scenario = Math.floor(Math.random() * 3);
         console.log("Scenario:", scenario === 0 ? "Plane Win" : scenario === 1 ? "Monster Win" : "Draw");
 
-        let planeStats = { hp: 100, dmg: 10 };
-        let monsterStats = { hp: 500, dmg: 20 };
+        let planeStats = { hp: 100, dmg: 10, maxSpeed: 6, maxForce: 0.15 };
+        let monsterStats = { hp: 500, dmg: 20, maxSpeed: 2, maxForce: 0.05 };
 
         if (scenario === 0) { // Plane Win
-            planeStats = { hp: 300, dmg: 25 }; // Strong Plane
-            monsterStats = { hp: 300, dmg: 5 }; // Weak Monster
+            planeStats = { hp: 300, dmg: 25, maxSpeed: 7, maxForce: 0.2 };
+            monsterStats = { hp: 300, dmg: 5, maxSpeed: 1.5, maxForce: 0.03 };
         } else if (scenario === 1) { // Monster Win
-            planeStats = { hp: 100, dmg: 5 }; // Weak Plane
-            monsterStats = { hp: 800, dmg: 40 }; // Strong Monster
-        } else { // Draw (Both strong/glass cannons)
-            planeStats = { hp: 150, dmg: 30 };
-            monsterStats = { hp: 400, dmg: 30 };
+            planeStats = { hp: 100, dmg: 5, maxSpeed: 5, maxForce: 0.1 };
+            monsterStats = { hp: 800, dmg: 40, maxSpeed: 3, maxForce: 0.1 };
+        } else { // Draw
+            planeStats = { hp: 150, dmg: 30, maxSpeed: 6, maxForce: 0.15 };
+            monsterStats = { hp: 400, dmg: 30, maxSpeed: 2.5, maxForce: 0.08 };
         }
 
         this.spawnMonster(monsterStats);
         this.spawnPlane(planeStats);
         
-        // Link targets
         this.plane.target = this.monster;
     }
 
@@ -71,7 +69,6 @@ class Game {
 
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        // Update and draw entities
         this.entities.forEach((entity, index) => {
             entity.update(deltaTime);
             entity.draw(this.ctx);
@@ -81,7 +78,6 @@ class Game {
             }
         });
 
-        // Update and draw projectiles
         this.projectiles.forEach((proj, index) => {
             proj.update(deltaTime);
             proj.draw(this.ctx);
@@ -91,7 +87,6 @@ class Game {
             }
         });
 
-        // Check Round End Conditions
         if (this.roundState === 'FIGHTING') {
             const monsterDead = !this.monster || this.monster.markedForDeletion;
             const planeDead = !this.plane || this.plane.markedForDeletion;
@@ -102,7 +97,7 @@ class Game {
             }
         } else if (this.roundState === 'ROUND_OVER') {
             this.roundTimer += deltaTime;
-            if (this.roundTimer > 3000) { // Wait 3 seconds before next round
+            if (this.roundTimer > 3000) {
                 this.startRound();
             }
         }
@@ -113,13 +108,119 @@ class Game {
 
 class Entity {
     constructor(x, y, game) {
-        this.x = x;
-        this.y = y;
+        this.pos = { x: x, y: y };
+        this.vel = { x: 0, y: 0 };
+        this.acc = { x: 0, y: 0 };
         this.game = game;
         this.markedForDeletion = false;
         this.radius = 20;
+        this.angle = 0;
+        this.maxSpeed = 4;
+        this.maxForce = 0.1;
     }
-    update(deltaTime) {}
+
+    update(deltaTime) {
+        this.vel.x += this.acc.x;
+        this.vel.y += this.acc.y;
+
+        const speed = Math.hypot(this.vel.x, this.vel.y);
+        if (speed > this.maxSpeed) {
+            this.vel.x = (this.vel.x / speed) * this.maxSpeed;
+            this.vel.y = (this.vel.y / speed) * this.maxSpeed;
+        }
+
+        this.pos.x += this.vel.x * (deltaTime / 16);
+        this.pos.y += this.vel.y * (deltaTime / 16);
+
+        this.acc.x = 0;
+        this.acc.y = 0;
+
+        // Smooth rotation towards velocity
+        if (speed > 0.1) {
+            const targetAngle = Math.atan2(this.vel.y, this.vel.x);
+            let angleDiff = targetAngle - this.angle;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            this.angle += angleDiff * 0.1;
+        }
+
+        // Screen wrapping
+        if (this.pos.x < -50) this.pos.x = this.game.width + 50;
+        if (this.pos.x > this.game.width + 50) this.pos.x = -50;
+        if (this.pos.y < -50) this.pos.y = this.game.height + 50;
+        if (this.pos.y > this.game.height + 50) this.pos.y = -50;
+    }
+
+    applyForce(x, y) {
+        this.acc.x += x;
+        this.acc.y += y;
+    }
+
+    seek(targetX, targetY) {
+        let desiredX = targetX - this.pos.x;
+        let desiredY = targetY - this.pos.y;
+        const dist = Math.hypot(desiredX, desiredY);
+        if (dist === 0) return;
+
+        desiredX = (desiredX / dist) * this.maxSpeed;
+        desiredY = (desiredY / dist) * this.maxSpeed;
+
+        let steerX = desiredX - this.vel.x;
+        let steerY = desiredY - this.vel.y;
+        this.limitForce(steerX, steerY);
+    }
+
+    arrive(targetX, targetY, slowingRadius = 200) {
+        let desiredX = targetX - this.pos.x;
+        let desiredY = targetY - this.pos.y;
+        const dist = Math.hypot(desiredX, desiredY);
+        
+        if (dist < slowingRadius) {
+            const m = (dist / slowingRadius) * this.maxSpeed;
+            desiredX = (desiredX / dist) * m;
+            desiredY = (desiredY / dist) * m;
+        } else {
+            desiredX = (desiredX / dist) * this.maxSpeed;
+            desiredY = (desiredY / dist) * this.maxSpeed;
+        }
+
+        let steerX = desiredX - this.vel.x;
+        let steerY = desiredY - this.vel.y;
+        this.limitForce(steerX, steerY);
+    }
+
+    evade(target, predictionFactor = 10) {
+        const futureX = target.pos.x + target.vel.x * predictionFactor;
+        const futureY = target.pos.y + target.vel.y * predictionFactor;
+        
+        let desiredX = this.pos.x - futureX;
+        let desiredY = this.pos.y - futureY;
+        const dist = Math.hypot(desiredX, desiredY);
+        if (dist === 0) return;
+
+        desiredX = (desiredX / dist) * this.maxSpeed;
+        desiredY = (desiredY / dist) * this.maxSpeed;
+
+        let steerX = desiredX - this.vel.x;
+        let steerY = desiredY - this.vel.y;
+        this.limitForce(steerX, steerY);
+    }
+
+    pursue(target, predictionFactor = 10) {
+        const futureX = target.pos.x + target.vel.x * predictionFactor;
+        const futureY = target.pos.y + target.vel.y * predictionFactor;
+        this.seek(futureX, futureY);
+    }
+
+    limitForce(x, y) {
+        const len = Math.hypot(x, y);
+        if (len > this.maxForce) {
+            x = (x / len) * this.maxForce;
+            y = (y / len) * this.maxForce;
+        }
+        this.applyForce(x, y);
+    }
+
     draw(ctx) {}
     takeDamage(amount) {}
 }
@@ -131,59 +232,38 @@ class Monster extends Entity {
         this.health = stats.hp;
         this.maxHealth = stats.hp;
         this.damage = stats.dmg;
-        this.angle = 0;
-        this.rotationSpeed = 0.002;
-        
-        this.moveTimer = 0;
-        this.moveDir = Math.random() * Math.PI * 2;
+        this.maxSpeed = stats.maxSpeed;
+        this.maxForce = stats.maxForce;
         
         this.shootTimer = 0;
         this.shootInterval = 800;
+        this.wanderAngle = 0;
     }
 
     update(deltaTime) {
-        this.angle += this.rotationSpeed * deltaTime;
-
-        // 1. Basic Wandering
-        this.moveTimer += deltaTime;
-        if (this.moveTimer > 2000) {
-            this.moveDir = Math.random() * Math.PI * 2;
-            this.moveTimer = 0;
-        }
+        // AI: Wander + Evade
+        this.wander();
         
-        let dx = Math.cos(this.moveDir) * 0.5;
-        let dy = Math.sin(this.moveDir) * 0.5;
-
-        // 2. Dodge Logic
-        const detectionRadius = 200;
-        let dodgeX = 0;
-        let dodgeY = 0;
-        
+        // Evade projectiles
+        const detectionRadius = 250;
         this.game.projectiles.forEach(p => {
             if (p.owner === 'plane') {
-                const dist = Math.hypot(p.x - this.x, p.y - this.y);
+                const dist = Math.hypot(p.pos.x - this.pos.x, p.pos.y - this.pos.y);
                 if (dist < detectionRadius) {
-                    const angleToProj = Math.atan2(p.y - this.y, p.x - this.x);
-                    dodgeX -= Math.cos(angleToProj) * 2;
-                    dodgeY -= Math.sin(angleToProj) * 2;
+                    // Evade projectile
+                    // Treat projectile as an entity with velocity
+                    this.evade({ pos: p.pos, vel: p.vel }, 5);
                 }
             }
         });
 
-        this.x += dx + dodgeX;
-        this.y += dy + dodgeY;
+        super.update(deltaTime);
 
-        // Screen bounds
-        if (this.x < 50) this.x = 50;
-        if (this.x > this.game.width - 50) this.x = this.game.width - 50;
-        if (this.y < 50) this.y = 50;
-        if (this.y > this.game.height - 50) this.y = this.game.height - 50;
-
-        // 3. Counter Attack
+        // Counter Attack
         if (this.game.plane && !this.game.plane.markedForDeletion) {
             this.shootTimer += deltaTime;
             if (this.shootTimer > this.shootInterval) {
-                const distToPlane = Math.hypot(this.game.plane.x - this.x, this.game.plane.y - this.y);
+                const distToPlane = Math.hypot(this.game.plane.pos.x - this.pos.x, this.game.plane.pos.y - this.pos.y);
                 if (distToPlane < 600) {
                     this.shoot(this.game.plane);
                     this.shootTimer = 0;
@@ -192,22 +272,44 @@ class Monster extends Entity {
         }
     }
 
+    wander() {
+        // Wander behavior
+        const wanderRadius = 50;
+        const wanderDist = 100;
+        const change = 0.5;
+        this.wanderAngle += Math.random() * change - change * 0.5;
+        
+        const circleCenterX = this.vel.x;
+        const circleCenterY = this.vel.y;
+        // Normalize and scale
+        const len = Math.hypot(circleCenterX, circleCenterY);
+        const nx = (circleCenterX / (len || 1)) * wanderDist;
+        const ny = (circleCenterY / (len || 1)) * wanderDist;
+
+        const hx = Math.cos(this.wanderAngle) * wanderRadius;
+        const hy = Math.sin(this.wanderAngle) * wanderRadius;
+
+        const targetX = this.pos.x + nx + hx;
+        const targetY = this.pos.y + ny + hy;
+        
+        this.seek(targetX, targetY);
+    }
+
     shoot(target) {
-        const angle = Math.atan2(target.y - this.y, target.x - this.x);
+        const angle = Math.atan2(target.pos.y - this.pos.y, target.pos.x - this.pos.x);
         for (let i = -1; i <= 1; i++) {
             const spread = i * 0.2;
             this.game.projectiles.push(
-                new Projectile(this.x, this.y, angle + spread, 'monster', this.game, this.damage)
+                new Projectile(this.pos.x, this.pos.y, angle + spread, 'monster', this.game, this.damage)
             );
         }
     }
 
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.pos.x, this.pos.y);
         ctx.rotate(this.angle);
         
-        // Boss Visuals
         ctx.strokeStyle = '#ff0055';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -228,9 +330,8 @@ class Monster extends Entity {
 
         ctx.restore();
 
-        // Health bar
         ctx.save();
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.pos.x, this.pos.y);
         ctx.fillStyle = 'red';
         ctx.fillRect(-40, -this.radius - 15, 80, 6);
         ctx.fillStyle = '#00ff00';
@@ -250,8 +351,8 @@ class Plane extends Entity {
     constructor(game, stats) {
         super(100, 100, game);
         this.target = game.monster;
-        this.speed = 5;
-        this.angle = 0;
+        this.maxSpeed = stats.maxSpeed;
+        this.maxForce = stats.maxForce;
         this.health = stats.hp;
         this.maxHealth = stats.hp;
         this.damage = stats.dmg;
@@ -260,84 +361,60 @@ class Plane extends Entity {
         this.shootTimer = 0;
         this.shootInterval = 80;
         
-        this.state = 'SEEK';
+        this.state = 'PURSUE'; // PURSUE, ATTACK, RETREAT
         this.stateTimer = 0;
     }
 
     update(deltaTime) {
         if (!this.target || this.target.markedForDeletion) {
-            // If target is dead, maybe fly away or victory lap?
-            // For now just keep flying straight or circle
-            this.angle += 0.02;
-            this.x += Math.cos(this.angle) * this.speed * (deltaTime/16);
-            this.y += Math.sin(this.angle) * this.speed * (deltaTime/16);
+            // Victory lap
+            this.wander();
+            super.update(deltaTime);
             return;
         }
 
-        const dx = this.target.x - this.x;
-        const dy = this.target.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const targetAngle = Math.atan2(dy, dx);
+        const dist = Math.hypot(this.target.pos.x - this.pos.x, this.target.pos.y - this.pos.y);
 
         switch (this.state) {
-            case 'SEEK':
-                this.turnTowards(targetAngle, 0.06);
-                if (distance < 400) this.state = 'ATTACK';
+            case 'PURSUE':
+                this.pursue(this.target);
+                if (dist < 400) this.state = 'ATTACK';
                 break;
             
             case 'ATTACK':
-                this.turnTowards(targetAngle, 0.04);
+                this.pursue(this.target); // Keep pursuing to aim
                 this.shootTimer += deltaTime;
                 if (this.shootTimer > this.shootInterval) {
                     this.shoot();
                     this.shootTimer = 0;
                 }
-                if (distance < 150) {
-                    this.state = 'PASS';
+                if (dist < 150) {
+                    this.state = 'RETREAT';
                     this.stateTimer = 0;
                 }
                 break;
 
-            case 'PASS':
+            case 'RETREAT':
+                // Evade the monster to get away fast
+                this.evade(this.target);
                 this.stateTimer += deltaTime;
-                if (this.stateTimer > 600) this.state = 'TURN';
-                break;
-
-            case 'TURN':
-                this.turnTowards(targetAngle, 0.1);
-                if (Math.abs(this.getAngleDiff(targetAngle)) < 0.5) this.state = 'SEEK';
+                if (this.stateTimer > 1000) this.state = 'PURSUE';
                 break;
         }
 
-        const moveStep = this.speed * (deltaTime / 16); 
-        this.x += Math.cos(this.angle) * moveStep;
-        this.y += Math.sin(this.angle) * moveStep;
-        
-        // Screen wrapping
-        if (this.x < -50) this.x = this.game.width + 50;
-        if (this.x > this.game.width + 50) this.x = -50;
-        if (this.y < -50) this.y = this.game.height + 50;
-        if (this.y > this.game.height + 50) this.y = -50;
+        super.update(deltaTime);
     }
 
-    turnTowards(targetAngle, turnSpeed) {
-        let angleDiff = targetAngle - this.angle;
-        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-        this.angle += angleDiff * turnSpeed;
-    }
-
-    getAngleDiff(targetAngle) {
-        let angleDiff = targetAngle - this.angle;
-        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-        return angleDiff;
+    wander() {
+         // Simple circle wander
+         this.angle += 0.05;
+         this.applyForce(Math.cos(this.angle) * 0.1, Math.sin(this.angle) * 0.1);
     }
 
     shoot() {
         const spread = (Math.random() - 0.5) * 0.1;
         this.game.projectiles.push(
-            new Projectile(this.x, this.y, this.angle + spread, 'plane', this.game, this.damage)
+            new Projectile(this.pos.x, this.pos.y, this.angle + spread, 'plane', this.game, this.damage)
         );
     }
 
@@ -350,10 +427,9 @@ class Plane extends Entity {
 
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.pos.x, this.pos.y);
         ctx.rotate(this.angle);
 
-        // Jet Visuals
         ctx.fillStyle = '#00ccff';
         ctx.beginPath();
         ctx.moveTo(20, 0);
@@ -370,9 +446,8 @@ class Plane extends Entity {
 
         ctx.restore();
         
-        // Health bar
         ctx.save();
-        ctx.translate(this.x, this.y);
+        ctx.translate(this.pos.x, this.pos.y);
         ctx.fillStyle = 'red';
         ctx.fillRect(-15, -25, 30, 3);
         ctx.fillStyle = '#00ff00';
@@ -381,14 +456,18 @@ class Plane extends Entity {
     }
 }
 
-class Projectile extends Entity {
+class Projectile {
     constructor(x, y, angle, owner, game, damage) {
-        super(x, y, game);
-        this.angle = angle;
+        this.pos = { x: x, y: y };
+        this.vel = { 
+            x: Math.cos(angle) * (owner === 'plane' ? 12 : 6), 
+            y: Math.sin(angle) * (owner === 'plane' ? 12 : 6) 
+        };
         this.owner = owner;
-        this.speed = owner === 'plane' ? 12 : 6;
-        this.life = 1500;
+        this.game = game;
         this.damage = damage;
+        this.life = 1500;
+        this.markedForDeletion = false;
         this.color = owner === 'plane' ? '#ffff00' : '#ff00ff';
     }
 
@@ -399,19 +478,18 @@ class Projectile extends Entity {
             return;
         }
 
-        const moveStep = this.speed * (deltaTime / 16);
-        this.x += Math.cos(this.angle) * moveStep;
-        this.y += Math.sin(this.angle) * moveStep;
+        this.pos.x += this.vel.x * (deltaTime / 16);
+        this.pos.y += this.vel.y * (deltaTime / 16);
 
         // Collision
         if (this.owner === 'plane' && this.game.monster && !this.game.monster.markedForDeletion) {
-            const dist = Math.hypot(this.game.monster.x - this.x, this.game.monster.y - this.y);
+            const dist = Math.hypot(this.game.monster.pos.x - this.pos.x, this.game.monster.pos.y - this.pos.y);
             if (dist < this.game.monster.radius) {
                 this.game.monster.takeDamage(this.damage);
                 this.markedForDeletion = true;
             }
         } else if (this.owner === 'monster' && this.game.plane && !this.game.plane.markedForDeletion) {
-            const dist = Math.hypot(this.game.plane.x - this.x, this.game.plane.y - this.y);
+            const dist = Math.hypot(this.game.plane.pos.x - this.pos.x, this.game.plane.pos.y - this.pos.y);
             if (dist < this.game.plane.radius) {
                 this.game.plane.takeDamage(this.damage);
                 this.markedForDeletion = true;
@@ -421,11 +499,11 @@ class Projectile extends Entity {
 
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
+        ctx.translate(this.pos.x, this.pos.y);
         ctx.fillStyle = this.color;
         
         if (this.owner === 'plane') {
+            ctx.rotate(Math.atan2(this.vel.y, this.vel.x));
             ctx.fillRect(-5, -1, 10, 2);
         } else {
             ctx.beginPath();
