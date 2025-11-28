@@ -33,24 +33,28 @@ class Game {
         const scenario = Math.floor(Math.random() * 3);
         console.log("Scenario:", scenario === 0 ? "Plane Win" : scenario === 1 ? "Monster Win" : "Draw");
 
-        let planeStats = { hp: 100, dmg: 10, maxSpeed: 6, maxForce: 0.15 };
-        let monsterStats = { hp: 500, dmg: 20, maxSpeed: 2, maxForce: 0.05 };
+        // Base stats - Planes are stronger now
+        let planeStats = { hp: 200, dmg: 15, maxSpeed: 6, maxForce: 0.15 };
+        let monsterStats = { hp: 2000, dmg: 20, maxSpeed: 2, maxForce: 0.05 }; // Monster HP buffed to handle multiple planes
 
         if (scenario === 0) { // Plane Win
-            planeStats = { hp: 300, dmg: 25, maxSpeed: 7, maxForce: 0.2 };
-            monsterStats = { hp: 300, dmg: 5, maxSpeed: 1.5, maxForce: 0.03 };
+            planeStats = { hp: 400, dmg: 30, maxSpeed: 7, maxForce: 0.2 };
+            monsterStats = { hp: 1500, dmg: 10, maxSpeed: 1.5, maxForce: 0.03 };
         } else if (scenario === 1) { // Monster Win
-            planeStats = { hp: 100, dmg: 5, maxSpeed: 5, maxForce: 0.1 };
-            monsterStats = { hp: 800, dmg: 40, maxSpeed: 3, maxForce: 0.1 };
+            planeStats = { hp: 150, dmg: 10, maxSpeed: 5, maxForce: 0.1 };
+            monsterStats = { hp: 3000, dmg: 50, maxSpeed: 3, maxForce: 0.1 };
         } else { // Draw
-            planeStats = { hp: 150, dmg: 30, maxSpeed: 6, maxForce: 0.15 };
-            monsterStats = { hp: 400, dmg: 30, maxSpeed: 2.5, maxForce: 0.08 };
+            planeStats = { hp: 250, dmg: 35, maxSpeed: 6, maxForce: 0.15 };
+            monsterStats = { hp: 2500, dmg: 40, maxSpeed: 2.5, maxForce: 0.08 };
         }
 
         this.spawnMonster(monsterStats);
-        this.spawnPlane(planeStats);
         
-        this.plane.target = this.monster;
+        // Spawn Squadron of 3-5 planes
+        const numPlanes = 3 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < numPlanes; i++) {
+            this.spawnPlane(planeStats);
+        }
     }
 
     spawnMonster(stats) {
@@ -59,8 +63,11 @@ class Game {
     }
 
     spawnPlane(stats) {
-        this.plane = new Plane(this, stats);
-        this.entities.push(this.plane);
+        // Spawn at random positions around the edges
+        const x = Math.random() < 0.5 ? -50 : this.width + 50;
+        const y = Math.random() * this.height;
+        const plane = new Plane(x, y, this, stats);
+        this.entities.push(plane);
     }
 
     loop(timestamp) {
@@ -89,9 +96,10 @@ class Game {
 
         if (this.roundState === 'FIGHTING') {
             const monsterDead = !this.monster || this.monster.markedForDeletion;
-            const planeDead = !this.plane || this.plane.markedForDeletion;
+            // Check if ALL planes are dead
+            const planesAlive = this.entities.some(e => e instanceof Plane && !e.markedForDeletion);
 
-            if (monsterDead || planeDead) {
+            if (monsterDead || !planesAlive) {
                 this.roundState = 'ROUND_OVER';
                 this.roundTimer = 0;
             }
@@ -135,7 +143,6 @@ class Entity {
         this.acc.x = 0;
         this.acc.y = 0;
 
-        // Smooth rotation towards velocity
         if (speed > 0.1) {
             const targetAngle = Math.atan2(this.vel.y, this.vel.x);
             let angleDiff = targetAngle - this.angle;
@@ -144,7 +151,6 @@ class Entity {
             this.angle += angleDiff * 0.1;
         }
 
-        // Screen wrapping
         if (this.pos.x < -50) this.pos.x = this.game.width + 50;
         if (this.pos.x > this.game.width + 50) this.pos.x = -50;
         if (this.pos.y < -50) this.pos.y = this.game.height + 50;
@@ -241,17 +247,13 @@ class Monster extends Entity {
     }
 
     update(deltaTime) {
-        // AI: Wander + Evade
         this.wander();
         
-        // Evade projectiles
         const detectionRadius = 250;
         this.game.projectiles.forEach(p => {
             if (p.owner === 'plane') {
                 const dist = Math.hypot(p.pos.x - this.pos.x, p.pos.y - this.pos.y);
                 if (dist < detectionRadius) {
-                    // Evade projectile
-                    // Treat projectile as an entity with velocity
                     this.evade({ pos: p.pos, vel: p.vel }, 5);
                 }
             }
@@ -259,21 +261,30 @@ class Monster extends Entity {
 
         super.update(deltaTime);
 
-        // Counter Attack
-        if (this.game.plane && !this.game.plane.markedForDeletion) {
-            this.shootTimer += deltaTime;
-            if (this.shootTimer > this.shootInterval) {
-                const distToPlane = Math.hypot(this.game.plane.pos.x - this.pos.x, this.game.plane.pos.y - this.pos.y);
-                if (distToPlane < 600) {
-                    this.shoot(this.game.plane);
-                    this.shootTimer = 0;
+        // Counter Attack - Target closest plane
+        this.shootTimer += deltaTime;
+        if (this.shootTimer > this.shootInterval) {
+            let closestPlane = null;
+            let minDist = 600; // Range
+
+            this.game.entities.forEach(e => {
+                if (e instanceof Plane && !e.markedForDeletion) {
+                    const d = Math.hypot(e.pos.x - this.pos.x, e.pos.y - this.pos.y);
+                    if (d < minDist) {
+                        minDist = d;
+                        closestPlane = e;
+                    }
                 }
+            });
+
+            if (closestPlane) {
+                this.shoot(closestPlane);
+                this.shootTimer = 0;
             }
         }
     }
 
     wander() {
-        // Wander behavior
         const wanderRadius = 50;
         const wanderDist = 100;
         const change = 0.5;
@@ -281,7 +292,6 @@ class Monster extends Entity {
         
         const circleCenterX = this.vel.x;
         const circleCenterY = this.vel.y;
-        // Normalize and scale
         const len = Math.hypot(circleCenterX, circleCenterY);
         const nx = (circleCenterX / (len || 1)) * wanderDist;
         const ny = (circleCenterY / (len || 1)) * wanderDist;
@@ -348,8 +358,8 @@ class Monster extends Entity {
 }
 
 class Plane extends Entity {
-    constructor(game, stats) {
-        super(100, 100, game);
+    constructor(x, y, game, stats) {
+        super(x, y, game);
         this.target = game.monster;
         this.maxSpeed = stats.maxSpeed;
         this.maxForce = stats.maxForce;
@@ -361,13 +371,12 @@ class Plane extends Entity {
         this.shootTimer = 0;
         this.shootInterval = 80;
         
-        this.state = 'PURSUE'; // PURSUE, ATTACK, RETREAT
+        this.state = 'PURSUE';
         this.stateTimer = 0;
     }
 
     update(deltaTime) {
         if (!this.target || this.target.markedForDeletion) {
-            // Victory lap
             this.wander();
             super.update(deltaTime);
             return;
@@ -382,7 +391,7 @@ class Plane extends Entity {
                 break;
             
             case 'ATTACK':
-                this.pursue(this.target); // Keep pursuing to aim
+                this.pursue(this.target);
                 this.shootTimer += deltaTime;
                 if (this.shootTimer > this.shootInterval) {
                     this.shoot();
@@ -395,7 +404,6 @@ class Plane extends Entity {
                 break;
 
             case 'RETREAT':
-                // Evade the monster to get away fast
                 this.evade(this.target);
                 this.stateTimer += deltaTime;
                 if (this.stateTimer > 1000) this.state = 'PURSUE';
@@ -406,7 +414,6 @@ class Plane extends Entity {
     }
 
     wander() {
-         // Simple circle wander
          this.angle += 0.05;
          this.applyForce(Math.cos(this.angle) * 0.1, Math.sin(this.angle) * 0.1);
     }
@@ -488,12 +495,17 @@ class Projectile {
                 this.game.monster.takeDamage(this.damage);
                 this.markedForDeletion = true;
             }
-        } else if (this.owner === 'monster' && this.game.plane && !this.game.plane.markedForDeletion) {
-            const dist = Math.hypot(this.game.plane.pos.x - this.pos.x, this.game.plane.pos.y - this.pos.y);
-            if (dist < this.game.plane.radius) {
-                this.game.plane.takeDamage(this.damage);
-                this.markedForDeletion = true;
-            }
+        } else if (this.owner === 'monster') {
+            // Check collision against ALL planes
+            this.game.entities.forEach(e => {
+                if (e instanceof Plane && !e.markedForDeletion) {
+                    const dist = Math.hypot(e.pos.x - this.pos.x, e.pos.y - this.pos.y);
+                    if (dist < e.radius) {
+                        e.takeDamage(this.damage);
+                        this.markedForDeletion = true;
+                    }
+                }
+            });
         }
     }
 
