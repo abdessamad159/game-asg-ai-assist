@@ -11,7 +11,10 @@ class Game {
         this.resize();
         window.addEventListener('resize', () => this.resize());
         
-        this.init();
+        this.roundState = 'STARTING'; // FIGHTING, ROUND_OVER
+        this.roundTimer = 0;
+
+        this.startRound();
         this.loop(0);
     }
 
@@ -22,18 +25,43 @@ class Game {
         this.canvas.height = this.height;
     }
 
-    init() {
-        this.spawnMonster();
-        this.spawnPlane();
+    startRound() {
+        this.entities = [];
+        this.projectiles = [];
+        this.roundState = 'FIGHTING';
+        
+        // Pick a scenario: 0 = Plane Win, 1 = Monster Win, 2 = Draw
+        const scenario = Math.floor(Math.random() * 3);
+        console.log("Scenario:", scenario === 0 ? "Plane Win" : scenario === 1 ? "Monster Win" : "Draw");
+
+        let planeStats = { hp: 100, dmg: 10 };
+        let monsterStats = { hp: 500, dmg: 20 };
+
+        if (scenario === 0) { // Plane Win
+            planeStats = { hp: 300, dmg: 25 }; // Strong Plane
+            monsterStats = { hp: 300, dmg: 5 }; // Weak Monster
+        } else if (scenario === 1) { // Monster Win
+            planeStats = { hp: 100, dmg: 5 }; // Weak Plane
+            monsterStats = { hp: 800, dmg: 40 }; // Strong Monster
+        } else { // Draw (Both strong/glass cannons)
+            planeStats = { hp: 150, dmg: 30 };
+            monsterStats = { hp: 400, dmg: 30 };
+        }
+
+        this.spawnMonster(monsterStats);
+        this.spawnPlane(planeStats);
+        
+        // Link targets
+        this.plane.target = this.monster;
     }
 
-    spawnMonster() {
-        this.monster = new Monster(this.width / 2, this.height / 2, this);
+    spawnMonster(stats) {
+        this.monster = new Monster(this.width / 2, this.height / 2, this, stats);
         this.entities.push(this.monster);
     }
 
-    spawnPlane() {
-        this.plane = new Plane(this);
+    spawnPlane(stats) {
+        this.plane = new Plane(this, stats);
         this.entities.push(this.plane);
     }
 
@@ -63,23 +91,19 @@ class Game {
             }
         });
 
-        // Respawn logic
-        if (!this.monster || this.monster.markedForDeletion) {
-            if (!this.monsterRespawnTimer) this.monsterRespawnTimer = 0;
-            this.monsterRespawnTimer += deltaTime;
-            if (this.monsterRespawnTimer > 2000) {
-                this.spawnMonster();
-                this.monsterRespawnTimer = 0;
-                if (this.plane) this.plane.target = this.monster;
-            }
-        }
+        // Check Round End Conditions
+        if (this.roundState === 'FIGHTING') {
+            const monsterDead = !this.monster || this.monster.markedForDeletion;
+            const planeDead = !this.plane || this.plane.markedForDeletion;
 
-        if (!this.plane || this.plane.markedForDeletion) {
-            if (!this.planeRespawnTimer) this.planeRespawnTimer = 0;
-            this.planeRespawnTimer += deltaTime;
-            if (this.planeRespawnTimer > 2000) {
-                this.spawnPlane();
-                this.planeRespawnTimer = 0;
+            if (monsterDead || planeDead) {
+                this.roundState = 'ROUND_OVER';
+                this.roundTimer = 0;
+            }
+        } else if (this.roundState === 'ROUND_OVER') {
+            this.roundTimer += deltaTime;
+            if (this.roundTimer > 3000) { // Wait 3 seconds before next round
+                this.startRound();
             }
         }
 
@@ -101,11 +125,12 @@ class Entity {
 }
 
 class Monster extends Entity {
-    constructor(x, y, game) {
+    constructor(x, y, game, stats) {
         super(x, y, game);
         this.radius = 50;
-        this.health = 500; // Boss health
-        this.maxHealth = 500;
+        this.health = stats.hp;
+        this.maxHealth = stats.hp;
+        this.damage = stats.dmg;
         this.angle = 0;
         this.rotationSpeed = 0.002;
         
@@ -113,7 +138,7 @@ class Monster extends Entity {
         this.moveDir = Math.random() * Math.PI * 2;
         
         this.shootTimer = 0;
-        this.shootInterval = 800; // Slower fire rate than plane
+        this.shootInterval = 800;
     }
 
     update(deltaTime) {
@@ -130,7 +155,6 @@ class Monster extends Entity {
         let dy = Math.sin(this.moveDir) * 0.5;
 
         // 2. Dodge Logic
-        // Check for incoming projectiles from the plane
         const detectionRadius = 200;
         let dodgeX = 0;
         let dodgeY = 0;
@@ -139,10 +163,8 @@ class Monster extends Entity {
             if (p.owner === 'plane') {
                 const dist = Math.hypot(p.x - this.x, p.y - this.y);
                 if (dist < detectionRadius) {
-                    // Calculate vector perpendicular to projectile velocity
-                    // Simple dodge: move away from the projectile
                     const angleToProj = Math.atan2(p.y - this.y, p.x - this.x);
-                    dodgeX -= Math.cos(angleToProj) * 2; // Move away strongly
+                    dodgeX -= Math.cos(angleToProj) * 2;
                     dodgeY -= Math.sin(angleToProj) * 2;
                 }
             }
@@ -172,11 +194,10 @@ class Monster extends Entity {
 
     shoot(target) {
         const angle = Math.atan2(target.y - this.y, target.x - this.x);
-        // Fire 3 spread shots
         for (let i = -1; i <= 1; i++) {
             const spread = i * 0.2;
             this.game.projectiles.push(
-                new Projectile(this.x, this.y, angle + spread, 'monster', this.game)
+                new Projectile(this.x, this.y, angle + spread, 'monster', this.game, this.damage)
             );
         }
     }
@@ -186,20 +207,16 @@ class Monster extends Entity {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
         
-        // Boss Visuals - Multi-layered
-        
-        // Outer Shield Ring
+        // Boss Visuals
         ctx.strokeStyle = '#ff0055';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
         ctx.stroke();
         
-        // Rotating Core
         ctx.fillStyle = '#aa0033';
         ctx.fillRect(-20, -20, 40, 40);
         
-        // Spikes
         for(let i=0; i<4; i++) {
             ctx.rotate(Math.PI / 2);
             ctx.beginPath();
@@ -225,19 +242,19 @@ class Monster extends Entity {
         this.health -= amount;
         if (this.health <= 0) {
             this.markedForDeletion = true;
-            // Explosion visual could be added here
         }
     }
 }
 
 class Plane extends Entity {
-    constructor(game) {
+    constructor(game, stats) {
         super(100, 100, game);
         this.target = game.monster;
         this.speed = 5;
         this.angle = 0;
-        this.health = 100;
-        this.maxHealth = 100;
+        this.health = stats.hp;
+        this.maxHealth = stats.hp;
+        this.damage = stats.dmg;
         this.radius = 15;
         
         this.shootTimer = 0;
@@ -249,56 +266,58 @@ class Plane extends Entity {
 
     update(deltaTime) {
         if (!this.target || this.target.markedForDeletion) {
-            this.target = this.game.monster;
-            this.state = 'SEEK';
+            // If target is dead, maybe fly away or victory lap?
+            // For now just keep flying straight or circle
+            this.angle += 0.02;
+            this.x += Math.cos(this.angle) * this.speed * (deltaTime/16);
+            this.y += Math.sin(this.angle) * this.speed * (deltaTime/16);
+            return;
         }
 
-        if (this.target) {
-            const dx = this.target.x - this.x;
-            const dy = this.target.y - this.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const targetAngle = Math.atan2(dy, dx);
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const targetAngle = Math.atan2(dy, dx);
 
-            switch (this.state) {
-                case 'SEEK':
-                    this.turnTowards(targetAngle, 0.06);
-                    if (distance < 400) this.state = 'ATTACK';
-                    break;
-                
-                case 'ATTACK':
-                    this.turnTowards(targetAngle, 0.04);
-                    this.shootTimer += deltaTime;
-                    if (this.shootTimer > this.shootInterval) {
-                        this.shoot();
-                        this.shootTimer = 0;
-                    }
-                    if (distance < 150) {
-                        this.state = 'PASS';
-                        this.stateTimer = 0;
-                    }
-                    break;
-
-                case 'PASS':
-                    this.stateTimer += deltaTime;
-                    if (this.stateTimer > 600) this.state = 'TURN';
-                    break;
-
-                case 'TURN':
-                    this.turnTowards(targetAngle, 0.1);
-                    if (Math.abs(this.getAngleDiff(targetAngle)) < 0.5) this.state = 'SEEK';
-                    break;
-            }
-
-            const moveStep = this.speed * (deltaTime / 16); 
-            this.x += Math.cos(this.angle) * moveStep;
-            this.y += Math.sin(this.angle) * moveStep;
+        switch (this.state) {
+            case 'SEEK':
+                this.turnTowards(targetAngle, 0.06);
+                if (distance < 400) this.state = 'ATTACK';
+                break;
             
-            // Screen wrapping
-            if (this.x < -50) this.x = this.game.width + 50;
-            if (this.x > this.game.width + 50) this.x = -50;
-            if (this.y < -50) this.y = this.game.height + 50;
-            if (this.y > this.game.height + 50) this.y = -50;
+            case 'ATTACK':
+                this.turnTowards(targetAngle, 0.04);
+                this.shootTimer += deltaTime;
+                if (this.shootTimer > this.shootInterval) {
+                    this.shoot();
+                    this.shootTimer = 0;
+                }
+                if (distance < 150) {
+                    this.state = 'PASS';
+                    this.stateTimer = 0;
+                }
+                break;
+
+            case 'PASS':
+                this.stateTimer += deltaTime;
+                if (this.stateTimer > 600) this.state = 'TURN';
+                break;
+
+            case 'TURN':
+                this.turnTowards(targetAngle, 0.1);
+                if (Math.abs(this.getAngleDiff(targetAngle)) < 0.5) this.state = 'SEEK';
+                break;
         }
+
+        const moveStep = this.speed * (deltaTime / 16); 
+        this.x += Math.cos(this.angle) * moveStep;
+        this.y += Math.sin(this.angle) * moveStep;
+        
+        // Screen wrapping
+        if (this.x < -50) this.x = this.game.width + 50;
+        if (this.x > this.game.width + 50) this.x = -50;
+        if (this.y < -50) this.y = this.game.height + 50;
+        if (this.y > this.game.height + 50) this.y = -50;
     }
 
     turnTowards(targetAngle, turnSpeed) {
@@ -318,7 +337,7 @@ class Plane extends Entity {
     shoot() {
         const spread = (Math.random() - 0.5) * 0.1;
         this.game.projectiles.push(
-            new Projectile(this.x, this.y, this.angle + spread, 'plane', this.game)
+            new Projectile(this.x, this.y, this.angle + spread, 'plane', this.game, this.damage)
         );
     }
 
@@ -351,7 +370,7 @@ class Plane extends Entity {
 
         ctx.restore();
         
-        // Health bar (small)
+        // Health bar
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.fillStyle = 'red';
@@ -363,13 +382,13 @@ class Plane extends Entity {
 }
 
 class Projectile extends Entity {
-    constructor(x, y, angle, owner, game) {
+    constructor(x, y, angle, owner, game, damage) {
         super(x, y, game);
         this.angle = angle;
-        this.owner = owner; // 'plane' or 'monster'
+        this.owner = owner;
         this.speed = owner === 'plane' ? 12 : 6;
         this.life = 1500;
-        this.damage = owner === 'plane' ? 10 : 20;
+        this.damage = damage;
         this.color = owner === 'plane' ? '#ffff00' : '#ff00ff';
     }
 
@@ -409,7 +428,6 @@ class Projectile extends Entity {
         if (this.owner === 'plane') {
             ctx.fillRect(-5, -1, 10, 2);
         } else {
-            // Monster projectiles are round energy balls
             ctx.beginPath();
             ctx.arc(0, 0, 4, 0, Math.PI * 2);
             ctx.fill();
