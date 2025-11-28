@@ -23,6 +23,18 @@ body {
     background: radial-gradient(circle at 10% 20%, #111111 0%, #000000 90%);
 }
 
+#bg-game {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.2;
+    filter: blur(3px);
+    pointer-events: none;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
