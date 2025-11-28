@@ -14,6 +14,11 @@ class Game {
         this.roundState = 'STARTING';
         this.roundTimer = 0;
 
+        // Squad Tactics
+        this.squadState = 'ORBIT'; // ORBIT, ATTACK_RUN, REGROUP
+        this.squadTimer = 0;
+        this.orbitRadius = 300;
+
         this.startRound();
         this.loop(0);
     }
@@ -29,31 +34,31 @@ class Game {
         this.entities = [];
         this.projectiles = [];
         this.roundState = 'FIGHTING';
+        this.squadState = 'ORBIT';
+        this.squadTimer = 0;
         
         const scenario = Math.floor(Math.random() * 3);
         console.log("Scenario:", scenario === 0 ? "Plane Win" : scenario === 1 ? "Monster Win" : "Draw");
 
-        // Base stats - Planes are stronger now
-        let planeStats = { hp: 200, dmg: 15, maxSpeed: 6, maxForce: 0.15 };
-        let monsterStats = { hp: 2000, dmg: 20, maxSpeed: 2, maxForce: 0.05 }; // Monster HP buffed to handle multiple planes
+        let planeStats = { hp: 250, dmg: 15, maxSpeed: 6, maxForce: 0.2 };
+        let monsterStats = { hp: 3000, dmg: 20, maxSpeed: 2, maxForce: 0.05 };
 
         if (scenario === 0) { // Plane Win
-            planeStats = { hp: 400, dmg: 30, maxSpeed: 7, maxForce: 0.2 };
-            monsterStats = { hp: 1500, dmg: 10, maxSpeed: 1.5, maxForce: 0.03 };
+            planeStats = { hp: 400, dmg: 30, maxSpeed: 7, maxForce: 0.3 };
+            monsterStats = { hp: 2000, dmg: 10, maxSpeed: 1.5, maxForce: 0.03 };
         } else if (scenario === 1) { // Monster Win
-            planeStats = { hp: 150, dmg: 10, maxSpeed: 5, maxForce: 0.1 };
-            monsterStats = { hp: 3000, dmg: 50, maxSpeed: 3, maxForce: 0.1 };
+            planeStats = { hp: 150, dmg: 10, maxSpeed: 5, maxForce: 0.15 };
+            monsterStats = { hp: 4000, dmg: 50, maxSpeed: 3, maxForce: 0.1 };
         } else { // Draw
-            planeStats = { hp: 250, dmg: 35, maxSpeed: 6, maxForce: 0.15 };
-            monsterStats = { hp: 2500, dmg: 40, maxSpeed: 2.5, maxForce: 0.08 };
+            planeStats = { hp: 300, dmg: 35, maxSpeed: 6, maxForce: 0.2 };
+            monsterStats = { hp: 3500, dmg: 40, maxSpeed: 2.5, maxForce: 0.08 };
         }
 
         this.spawnMonster(monsterStats);
         
-        // Spawn Squadron of 3-5 planes
-        const numPlanes = 3 + Math.floor(Math.random() * 3);
+        const numPlanes = 4 + Math.floor(Math.random() * 2); // 4-5 planes
         for (let i = 0; i < numPlanes; i++) {
-            this.spawnPlane(planeStats);
+            this.spawnPlane(planeStats, i, numPlanes);
         }
     }
 
@@ -62,17 +67,51 @@ class Game {
         this.entities.push(this.monster);
     }
 
-    spawnPlane(stats) {
-        // Spawn at random positions around the edges
+    spawnPlane(stats, slotIndex, totalSlots) {
         const x = Math.random() < 0.5 ? -50 : this.width + 50;
         const y = Math.random() * this.height;
-        const plane = new Plane(x, y, this, stats);
+        const plane = new Plane(x, y, this, stats, slotIndex, totalSlots);
         this.entities.push(plane);
+    }
+
+    updateSquadTactics(deltaTime) {
+        if (!this.monster || this.monster.markedForDeletion) return;
+
+        this.squadTimer += deltaTime;
+
+        switch (this.squadState) {
+            case 'ORBIT':
+                // Planes circle the monster
+                if (this.squadTimer > 4000) { // Orbit for 4 seconds
+                    this.squadState = 'ATTACK_RUN';
+                    this.squadTimer = 0;
+                    console.log("Squad: ATTACK!");
+                }
+                break;
+            case 'ATTACK_RUN':
+                // Planes dive in
+                if (this.squadTimer > 2000) { // Attack for 2 seconds
+                    this.squadState = 'REGROUP';
+                    this.squadTimer = 0;
+                    console.log("Squad: REGROUP!");
+                }
+                break;
+            case 'REGROUP':
+                // Planes pull back to orbit distance
+                if (this.squadTimer > 2000) { // Regroup for 2 seconds
+                    this.squadState = 'ORBIT';
+                    this.squadTimer = 0;
+                    console.log("Squad: ORBITING");
+                }
+                break;
+        }
     }
 
     loop(timestamp) {
         const deltaTime = timestamp - this.lastTime;
         this.lastTime = timestamp;
+
+        this.updateSquadTactics(deltaTime);
 
         this.ctx.clearRect(0, 0, this.width, this.height);
 
@@ -96,7 +135,6 @@ class Game {
 
         if (this.roundState === 'FIGHTING') {
             const monsterDead = !this.monster || this.monster.markedForDeletion;
-            // Check if ALL planes are dead
             const planesAlive = this.entities.some(e => e instanceof Plane && !e.markedForDeletion);
 
             if (monsterDead || !planesAlive) {
@@ -212,12 +250,6 @@ class Entity {
         this.limitForce(steerX, steerY);
     }
 
-    pursue(target, predictionFactor = 10) {
-        const futureX = target.pos.x + target.vel.x * predictionFactor;
-        const futureY = target.pos.y + target.vel.y * predictionFactor;
-        this.seek(futureX, futureY);
-    }
-
     limitForce(x, y) {
         const len = Math.hypot(x, y);
         if (len > this.maxForce) {
@@ -261,11 +293,10 @@ class Monster extends Entity {
 
         super.update(deltaTime);
 
-        // Counter Attack - Target closest plane
         this.shootTimer += deltaTime;
         if (this.shootTimer > this.shootInterval) {
             let closestPlane = null;
-            let minDist = 600; // Range
+            let minDist = 600;
 
             this.game.entities.forEach(e => {
                 if (e instanceof Plane && !e.markedForDeletion) {
@@ -358,7 +389,7 @@ class Monster extends Entity {
 }
 
 class Plane extends Entity {
-    constructor(x, y, game, stats) {
+    constructor(x, y, game, stats, slotIndex, totalSlots) {
         super(x, y, game);
         this.target = game.monster;
         this.maxSpeed = stats.maxSpeed;
@@ -368,11 +399,11 @@ class Plane extends Entity {
         this.damage = stats.dmg;
         this.radius = 15;
         
+        this.slotIndex = slotIndex;
+        this.totalSlots = totalSlots;
+        
         this.shootTimer = 0;
         this.shootInterval = 80;
-        
-        this.state = 'PURSUE';
-        this.stateTimer = 0;
     }
 
     update(deltaTime) {
@@ -382,35 +413,69 @@ class Plane extends Entity {
             return;
         }
 
-        const dist = Math.hypot(this.target.pos.x - this.pos.x, this.target.pos.y - this.pos.y);
-
-        switch (this.state) {
-            case 'PURSUE':
-                this.pursue(this.target);
-                if (dist < 400) this.state = 'ATTACK';
+        // Squad Tactics Logic
+        switch (this.game.squadState) {
+            case 'ORBIT':
+                this.orbitBehavior();
                 break;
-            
-            case 'ATTACK':
-                this.pursue(this.target);
-                this.shootTimer += deltaTime;
-                if (this.shootTimer > this.shootInterval) {
-                    this.shoot();
-                    this.shootTimer = 0;
-                }
-                if (dist < 150) {
-                    this.state = 'RETREAT';
-                    this.stateTimer = 0;
-                }
+            case 'ATTACK_RUN':
+                this.attackBehavior(deltaTime);
                 break;
-
-            case 'RETREAT':
-                this.evade(this.target);
-                this.stateTimer += deltaTime;
-                if (this.stateTimer > 1000) this.state = 'PURSUE';
+            case 'REGROUP':
+                this.regroupBehavior();
                 break;
         }
 
         super.update(deltaTime);
+    }
+
+    orbitBehavior() {
+        // Calculate desired position on the circle
+        // Rotate the entire formation slowly
+        const formationRotation = Date.now() * 0.0005;
+        const angle = (this.slotIndex / this.totalSlots) * Math.PI * 2 + formationRotation;
+        
+        const targetX = this.target.pos.x + Math.cos(angle) * this.game.orbitRadius;
+        const targetY = this.target.pos.y + Math.sin(angle) * this.game.orbitRadius;
+        
+        this.arrive(targetX, targetY);
+    }
+
+    attackBehavior(deltaTime) {
+        // Dive in!
+        this.seek(this.target.pos.x, this.target.pos.y);
+        
+        // Shoot if close enough
+        const dist = Math.hypot(this.target.pos.x - this.pos.x, this.target.pos.y - this.pos.y);
+        if (dist < 400) {
+            this.shootTimer += deltaTime;
+            if (this.shootTimer > this.shootInterval) {
+                this.shoot();
+                this.shootTimer = 0;
+            }
+        }
+    }
+
+    regroupBehavior() {
+        // Evade to get back to distance quickly
+        const dist = Math.hypot(this.target.pos.x - this.pos.x, this.target.pos.y - this.pos.y);
+        if (dist < this.game.orbitRadius) {
+            // Flee from monster
+            let desiredX = this.pos.x - this.target.pos.x;
+            let desiredY = this.pos.y - this.target.pos.y;
+            // Normalize
+            const len = Math.hypot(desiredX, desiredY);
+            if (len > 0) {
+                desiredX = (desiredX / len) * this.maxSpeed;
+                desiredY = (desiredY / len) * this.maxSpeed;
+                let steerX = desiredX - this.vel.x;
+                let steerY = desiredY - this.vel.y;
+                this.limitForce(steerX, steerY);
+            }
+        } else {
+            // Resume orbit if far enough
+            this.orbitBehavior();
+        }
     }
 
     wander() {
@@ -496,7 +561,6 @@ class Projectile {
                 this.markedForDeletion = true;
             }
         } else if (this.owner === 'monster') {
-            // Check collision against ALL planes
             this.game.entities.forEach(e => {
                 if (e instanceof Plane && !e.markedForDeletion) {
                     const dist = Math.hypot(e.pos.x - this.pos.x, e.pos.y - this.pos.y);
