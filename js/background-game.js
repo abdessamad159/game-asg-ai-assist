@@ -17,7 +17,7 @@ class Game {
         // Squad Tactics
         this.squadState = 'ORBIT'; // ORBIT, ATTACK_RUN, REGROUP
         this.squadTimer = 0;
-        this.orbitRadius = 300;
+        this.orbitRadius = 350; // Increased radius for better spacing
 
         this.startRound();
         this.loop(0);
@@ -41,17 +41,17 @@ class Game {
         console.log("Scenario:", scenario === 0 ? "Plane Win" : scenario === 1 ? "Monster Win" : "Draw");
 
         let planeStats = { hp: 250, dmg: 15, maxSpeed: 6, maxForce: 0.2 };
-        let monsterStats = { hp: 3000, dmg: 20, maxSpeed: 2, maxForce: 0.05 };
+        let monsterStats = { hp: 3000, dmg: 20, maxSpeed: 3, maxForce: 0.1 };
 
         if (scenario === 0) { // Plane Win
             planeStats = { hp: 400, dmg: 30, maxSpeed: 7, maxForce: 0.3 };
-            monsterStats = { hp: 2000, dmg: 10, maxSpeed: 1.5, maxForce: 0.03 };
+            monsterStats = { hp: 2000, dmg: 10, maxSpeed: 2, maxForce: 0.05 };
         } else if (scenario === 1) { // Monster Win
             planeStats = { hp: 150, dmg: 10, maxSpeed: 5, maxForce: 0.15 };
-            monsterStats = { hp: 4000, dmg: 50, maxSpeed: 3, maxForce: 0.1 };
+            monsterStats = { hp: 4000, dmg: 50, maxSpeed: 4, maxForce: 0.15 };
         } else { // Draw
             planeStats = { hp: 300, dmg: 35, maxSpeed: 6, maxForce: 0.2 };
-            monsterStats = { hp: 3500, dmg: 40, maxSpeed: 2.5, maxForce: 0.08 };
+            monsterStats = { hp: 3500, dmg: 40, maxSpeed: 3, maxForce: 0.1 };
         }
 
         this.spawnMonster(monsterStats);
@@ -81,27 +81,21 @@ class Game {
 
         switch (this.squadState) {
             case 'ORBIT':
-                // Planes circle the monster
-                if (this.squadTimer > 4000) { // Orbit for 4 seconds
+                if (this.squadTimer > 4000) {
                     this.squadState = 'ATTACK_RUN';
                     this.squadTimer = 0;
-                    console.log("Squad: ATTACK!");
                 }
                 break;
             case 'ATTACK_RUN':
-                // Planes dive in
-                if (this.squadTimer > 2000) { // Attack for 2 seconds
+                if (this.squadTimer > 2500) {
                     this.squadState = 'REGROUP';
                     this.squadTimer = 0;
-                    console.log("Squad: REGROUP!");
                 }
                 break;
             case 'REGROUP':
-                // Planes pull back to orbit distance
-                if (this.squadTimer > 2000) { // Regroup for 2 seconds
+                if (this.squadTimer > 2000) {
                     this.squadState = 'ORBIT';
                     this.squadTimer = 0;
-                    console.log("Squad: ORBITING");
                 }
                 break;
         }
@@ -189,6 +183,7 @@ class Entity {
             this.angle += angleDiff * 0.1;
         }
 
+        // Screen wrapping
         if (this.pos.x < -50) this.pos.x = this.game.width + 50;
         if (this.pos.x > this.game.width + 50) this.pos.x = -50;
         if (this.pos.y < -50) this.pos.y = this.game.height + 50;
@@ -274,75 +269,126 @@ class Monster extends Entity {
         this.maxForce = stats.maxForce;
         
         this.shootTimer = 0;
-        this.shootInterval = 800;
-        this.wanderAngle = 0;
+        this.shootInterval = 600; // Faster shooting
+        this.dashTimer = 0;
+        this.dashCooldown = 2000;
+        this.strafeDir = 1;
+        this.strafeTimer = 0;
     }
 
     update(deltaTime) {
-        this.wander();
-        
-        const detectionRadius = 250;
+        // 1. Smart Movement (Strafe & Dash)
+        this.smartMovement(deltaTime);
+
+        // 2. Advanced Evasion
+        const detectionRadius = 300;
         this.game.projectiles.forEach(p => {
             if (p.owner === 'plane') {
                 const dist = Math.hypot(p.pos.x - this.pos.x, p.pos.y - this.pos.y);
                 if (dist < detectionRadius) {
-                    this.evade({ pos: p.pos, vel: p.vel }, 5);
+                    // Strong evasion
+                    this.evade({ pos: p.pos, vel: p.vel }, 8);
                 }
             }
         });
 
         super.update(deltaTime);
 
+        // 3. Predictive Combat
         this.shootTimer += deltaTime;
         if (this.shootTimer > this.shootInterval) {
-            let closestPlane = null;
-            let minDist = 600;
-
-            this.game.entities.forEach(e => {
-                if (e instanceof Plane && !e.markedForDeletion) {
-                    const d = Math.hypot(e.pos.x - this.pos.x, e.pos.y - this.pos.y);
-                    if (d < minDist) {
-                        minDist = d;
-                        closestPlane = e;
-                    }
-                }
-            });
-
-            if (closestPlane) {
-                this.shoot(closestPlane);
-                this.shootTimer = 0;
-            }
+            this.predictiveAttack();
         }
     }
 
-    wander() {
-        const wanderRadius = 50;
-        const wanderDist = 100;
-        const change = 0.5;
-        this.wanderAngle += Math.random() * change - change * 0.5;
-        
-        const circleCenterX = this.vel.x;
-        const circleCenterY = this.vel.y;
-        const len = Math.hypot(circleCenterX, circleCenterY);
-        const nx = (circleCenterX / (len || 1)) * wanderDist;
-        const ny = (circleCenterY / (len || 1)) * wanderDist;
+    smartMovement(deltaTime) {
+        // Find closest threat
+        let closestPlane = null;
+        let minDist = 1000;
+        this.game.entities.forEach(e => {
+            if (e instanceof Plane && !e.markedForDeletion) {
+                const d = Math.hypot(e.pos.x - this.pos.x, e.pos.y - this.pos.y);
+                if (d < minDist) {
+                    minDist = d;
+                    closestPlane = e;
+                }
+            }
+        });
 
-        const hx = Math.cos(this.wanderAngle) * wanderRadius;
-        const hy = Math.sin(this.wanderAngle) * wanderRadius;
+        if (closestPlane) {
+            // Strafe behavior: Move perpendicular to target
+            this.strafeTimer += deltaTime;
+            if (this.strafeTimer > 1500) {
+                this.strafeDir *= -1; // Switch direction
+                this.strafeTimer = 0;
+            }
 
-        const targetX = this.pos.x + nx + hx;
-        const targetY = this.pos.y + ny + hy;
-        
-        this.seek(targetX, targetY);
+            const angleToPlane = Math.atan2(closestPlane.pos.y - this.pos.y, closestPlane.pos.x - this.pos.x);
+            const strafeAngle = angleToPlane + (Math.PI / 2 * this.strafeDir);
+            
+            // Calculate strafe vector
+            let strafeX = Math.cos(strafeAngle) * this.maxSpeed;
+            let strafeY = Math.sin(strafeAngle) * this.maxSpeed;
+
+            // Maintain distance (don't get too close, don't get too far)
+            if (minDist < 300) {
+                // Too close, back away
+                strafeX -= Math.cos(angleToPlane) * this.maxSpeed;
+                strafeY -= Math.sin(angleToPlane) * this.maxSpeed;
+            } else if (minDist > 600) {
+                // Too far, close in slightly
+                strafeX += Math.cos(angleToPlane) * (this.maxSpeed * 0.5);
+                strafeY += Math.sin(angleToPlane) * (this.maxSpeed * 0.5);
+            }
+
+            this.applyForce(strafeX * 0.1, strafeY * 0.1);
+
+            // Dash Logic
+            this.dashTimer += deltaTime;
+            if (this.dashTimer > this.dashCooldown && minDist < 400) {
+                // Dash away or to side
+                this.vel.x += Math.cos(strafeAngle) * 15;
+                this.vel.y += Math.sin(strafeAngle) * 15;
+                this.dashTimer = 0;
+                console.log("Monster: DASH!");
+            }
+        } else {
+            // Idle wandering if no targets
+            this.angle += 0.02;
+            this.applyForce(Math.cos(this.angle) * 0.1, Math.sin(this.angle) * 0.1);
+        }
     }
 
-    shoot(target) {
-        const angle = Math.atan2(target.pos.y - this.pos.y, target.pos.x - this.pos.x);
-        for (let i = -1; i <= 1; i++) {
-            const spread = i * 0.2;
-            this.game.projectiles.push(
-                new Projectile(this.pos.x, this.pos.y, angle + spread, 'monster', this.game, this.damage)
-            );
+    predictiveAttack() {
+        let target = null;
+        let minDist = 800;
+
+        this.game.entities.forEach(e => {
+            if (e instanceof Plane && !e.markedForDeletion) {
+                const d = Math.hypot(e.pos.x - this.pos.x, e.pos.y - this.pos.y);
+                if (d < minDist) {
+                    minDist = d;
+                    target = e;
+                }
+            }
+        });
+
+        if (target) {
+            // Calculate lead position
+            const timeToHit = minDist / 8; // Approx projectile speed
+            const predictedX = target.pos.x + target.vel.x * timeToHit;
+            const predictedY = target.pos.y + target.vel.y * timeToHit;
+            
+            const angle = Math.atan2(predictedY - this.pos.y, predictedX - this.pos.x);
+            
+            // Spread shot
+            for (let i = -1; i <= 1; i++) {
+                const spread = i * 0.15;
+                this.game.projectiles.push(
+                    new Projectile(this.pos.x, this.pos.y, angle + spread, 'monster', this.game, this.damage)
+                );
+            }
+            this.shootTimer = 0;
         }
     }
 
@@ -350,6 +396,13 @@ class Monster extends Entity {
         ctx.save();
         ctx.translate(this.pos.x, this.pos.y);
         ctx.rotate(this.angle);
+        
+        // Shield/Force Field Effect
+        ctx.strokeStyle = `rgba(255, 0, 85, ${0.3 + Math.random() * 0.2})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius + 10, 0, Math.PI * 2);
+        ctx.stroke();
         
         ctx.strokeStyle = '#ff0055';
         ctx.lineWidth = 3;
@@ -360,23 +413,26 @@ class Monster extends Entity {
         ctx.fillStyle = '#aa0033';
         ctx.fillRect(-20, -20, 40, 40);
         
-        for(let i=0; i<4; i++) {
-            ctx.rotate(Math.PI / 2);
+        // Spikes
+        for(let i=0; i<8; i++) {
+            ctx.rotate(Math.PI / 4);
             ctx.beginPath();
-            ctx.moveTo(20, -10);
-            ctx.lineTo(40, 0);
-            ctx.lineTo(20, 10);
+            ctx.moveTo(25, -5);
+            ctx.lineTo(45, 0);
+            ctx.lineTo(25, 5);
+            ctx.fillStyle = '#ff0055';
             ctx.fill();
         }
 
         ctx.restore();
 
+        // Health Bar
         ctx.save();
         ctx.translate(this.pos.x, this.pos.y);
         ctx.fillStyle = 'red';
-        ctx.fillRect(-40, -this.radius - 15, 80, 6);
+        ctx.fillRect(-40, -this.radius - 20, 80, 6);
         ctx.fillStyle = '#00ff00';
-        ctx.fillRect(-40, -this.radius - 15, 80 * (this.health / this.maxHealth), 6);
+        ctx.fillRect(-40, -this.radius - 20, 80 * (this.health / this.maxHealth), 6);
         ctx.restore();
     }
 
@@ -403,7 +459,7 @@ class Plane extends Entity {
         this.totalSlots = totalSlots;
         
         this.shootTimer = 0;
-        this.shootInterval = 80;
+        this.shootInterval = 100;
     }
 
     update(deltaTime) {
@@ -413,7 +469,7 @@ class Plane extends Entity {
             return;
         }
 
-        // Squad Tactics Logic
+        // 1. Squad Tactics
         switch (this.game.squadState) {
             case 'ORBIT':
                 this.orbitBehavior();
@@ -426,12 +482,22 @@ class Plane extends Entity {
                 break;
         }
 
+        // 2. NO FLY ZONE (Collision Avoidance)
+        const distToMonster = Math.hypot(this.target.pos.x - this.pos.x, this.target.pos.y - this.pos.y);
+        const avoidanceRadius = this.target.radius + 100; // Keep 100px buffer
+        
+        if (distToMonster < avoidanceRadius) {
+            // Strong repulsion force
+            const angleFromMonster = Math.atan2(this.pos.y - this.target.pos.y, this.pos.x - this.target.pos.x);
+            const forceX = Math.cos(angleFromMonster) * 2.0; // Strong force
+            const forceY = Math.sin(angleFromMonster) * 2.0;
+            this.applyForce(forceX, forceY);
+        }
+
         super.update(deltaTime);
     }
 
     orbitBehavior() {
-        // Calculate desired position on the circle
-        // Rotate the entire formation slowly
         const formationRotation = Date.now() * 0.0005;
         const angle = (this.slotIndex / this.totalSlots) * Math.PI * 2 + formationRotation;
         
@@ -442,10 +508,8 @@ class Plane extends Entity {
     }
 
     attackBehavior(deltaTime) {
-        // Dive in!
         this.seek(this.target.pos.x, this.target.pos.y);
         
-        // Shoot if close enough
         const dist = Math.hypot(this.target.pos.x - this.pos.x, this.target.pos.y - this.pos.y);
         if (dist < 400) {
             this.shootTimer += deltaTime;
@@ -457,13 +521,10 @@ class Plane extends Entity {
     }
 
     regroupBehavior() {
-        // Evade to get back to distance quickly
         const dist = Math.hypot(this.target.pos.x - this.pos.x, this.target.pos.y - this.pos.y);
         if (dist < this.game.orbitRadius) {
-            // Flee from monster
             let desiredX = this.pos.x - this.target.pos.x;
             let desiredY = this.pos.y - this.target.pos.y;
-            // Normalize
             const len = Math.hypot(desiredX, desiredY);
             if (len > 0) {
                 desiredX = (desiredX / len) * this.maxSpeed;
@@ -473,7 +534,6 @@ class Plane extends Entity {
                 this.limitForce(steerX, steerY);
             }
         } else {
-            // Resume orbit if far enough
             this.orbitBehavior();
         }
     }
@@ -532,8 +592,8 @@ class Projectile {
     constructor(x, y, angle, owner, game, damage) {
         this.pos = { x: x, y: y };
         this.vel = { 
-            x: Math.cos(angle) * (owner === 'plane' ? 12 : 6), 
-            y: Math.sin(angle) * (owner === 'plane' ? 12 : 6) 
+            x: Math.cos(angle) * (owner === 'plane' ? 14 : 8), // Faster projectiles
+            y: Math.sin(angle) * (owner === 'plane' ? 14 : 8) 
         };
         this.owner = owner;
         this.game = game;
@@ -583,7 +643,7 @@ class Projectile {
             ctx.fillRect(-5, -1, 10, 2);
         } else {
             ctx.beginPath();
-            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
             ctx.fill();
         }
 
